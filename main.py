@@ -3,12 +3,14 @@ import requests
 
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
+from urllib.parse import urljoin, urlsplit, unquote
+
 
 url_template = 'https://tululu.org/txt.php?id='
 folder = 'books'
 
 
-def save_image(book, path):
+def save_file(book, path):
     with open(path, 'wb') as file:
         file.write(book)
 
@@ -40,7 +42,7 @@ def download_txt(url, folder):
         filename_with_extension = f'{filename}.txt'
         path = os.path.join(folder, filename_with_extension)
 
-        save_image(response.content, path)
+        save_file(response.content, path)
 
         return path
     except requests.exceptions.HTTPError:
@@ -63,22 +65,54 @@ def get_book_author_and_name(number_of_book):
     return normal_name, normal_author
 
 
-"""def get_book_from_site():
-    os.makedirs(directory, exist_ok=True)
+def get_image_url(number_of_book):
+    url_template = 'https://tululu.org/b'
+    url = f'{url_template}{number_of_book}/'
 
-    number_of_book = 1
-    url = f'{url_template}{number_of_book}'
     response = requests.get(url)
     response.raise_for_status()
 
     try:
         check_for_redirect(response)
-        save_image(response.content, directory, filename_template, number_of_book)
+
+        soup = BeautifulSoup(response.text, 'lxml')
+        relative_image_url = soup.find('div', class_='bookimage').find('img')['src']
+        image_url = urljoin('https://tululu.org', relative_image_url)
+
+        return image_url
     except requests.exceptions.HTTPError:
-        print(f'По ссылке {url} нет книги для скачивания.')"""
+        return None
+
+
+def download_image(url, folder):
+    os.makedirs(folder, exist_ok=True)
+
+    response = requests.get(url)
+    response.raise_for_status()
+
+    try:
+        check_for_redirect(response)
+
+        path = urlsplit(url)
+
+        filename = unquote(path.path).split('/')[-1]
+
+        path = os.path.join(folder, filename)
+
+        save_file(response.content, path)
+
+        return filename
+    except requests.exceptions.HTTPError:
+        print(f'По ссылке {url} нет книги для скачивания.')
 
 
 if __name__ == '__main__':
-    for number_of_book in range(1, 11):
+    """    for number_of_book in range(1, 11):
         url = f'{url_template}{number_of_book}'
-        print(download_txt(url, folder))
+        print(download_txt(url, folder))"""
+    for number_of_book in range(1, 11): 
+        url = get_image_url(number_of_book)
+        print(get_image_url(number_of_book))
+        folder = 'images'
+        if url: 
+            print(download_image(url, folder))
