@@ -51,10 +51,15 @@ def download_txt(url, folder):
     
 def get_book_author_and_name(number_of_book):
     url_template = 'https://tululu.org/b'
-    url = f'{url_template}{number_of_book}'
+    url = f'{url_template}{number_of_book}/'
 
     response = requests.get(url)
     response.raise_for_status()
+
+    try:
+        check_for_redirect(response)
+    except requests.exceptions.HTTPError:
+        return None, []
 
     soup = BeautifulSoup(response.text, 'lxml')
     book_name_and_author = soup.find('h1').text.split('::')
@@ -62,7 +67,12 @@ def get_book_author_and_name(number_of_book):
     normal_name = sanitize_filename(name.strip())
     normal_author = sanitize_filename(author.strip())
 
-    return normal_name, normal_author
+    genres_html = soup.find('span', class_='d_book').find_all('a')
+    all_genres = []
+    for genre in genres_html:
+        all_genres.append(genre.text)
+
+    return normal_author, all_genres
 
 
 def get_image_url(number_of_book):
@@ -124,7 +134,7 @@ def get_book_comments(number_of_book):
     all_comments = []
     for comment in text_html:
         all_comments.append(comment.text)
-        
+
     return all_comments
 
 
@@ -132,6 +142,8 @@ if __name__ == '__main__':
     """    for number_of_book in range(1, 11):
         url = f'{url_template}{number_of_book}'
         print(download_txt(url, folder))"""
-    for number_of_book in range(9, 10): 
-        print(get_book_comments(number_of_book))
+    for number_of_book in range(1, 11): 
+        author, genres = get_book_author_and_name(number_of_book)
+        print(author)
+        [print(genre) for genre in genres]
         print(' ')
