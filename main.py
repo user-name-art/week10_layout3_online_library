@@ -106,13 +106,32 @@ def download_image(url, folder):
         print(f'По ссылке {url} нет книги для скачивания.')
 
 
+def get_book_comments(number_of_book):
+    url_template = 'https://tululu.org/b'
+    url = f'{url_template}{number_of_book}/'
+
+    response = requests.get(url)
+    response.raise_for_status()
+
+    try:
+        check_for_redirect(response)
+    except requests.exceptions.HTTPError:
+        return None
+
+    soup = BeautifulSoup(response.text, 'lxml')
+    text_html = soup.find('div', id='content').find_all('span', class_='black')
+
+    all_comments = []
+    for comment in text_html:
+        all_comments.append(comment.text)
+        
+    return all_comments
+
+
 if __name__ == '__main__':
     """    for number_of_book in range(1, 11):
         url = f'{url_template}{number_of_book}'
         print(download_txt(url, folder))"""
-    for number_of_book in range(1, 11): 
-        url = get_image_url(number_of_book)
-        print(get_image_url(number_of_book))
-        folder = 'images'
-        if url: 
-            print(download_image(url, folder))
+    for number_of_book in range(9, 10): 
+        print(get_book_comments(number_of_book))
+        print(' ')
