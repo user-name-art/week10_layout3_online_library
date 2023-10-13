@@ -20,9 +20,7 @@ def check_for_redirect(response):
         raise requests.exceptions.HTTPError
 
 
-def parse_book_page(html):
-    soup = BeautifulSoup(response.text, 'lxml')
-
+def parse_book_page(soup):
     book_name_and_author = soup.find('h1').text.split('::')
     name, author = book_name_and_author
     normal_name = sanitize_filename(name.strip())
@@ -36,10 +34,10 @@ def parse_book_page(html):
     relative_image_url = soup.find('div', class_='bookimage').find('img')['src']
     image_url = urljoin('https://tululu.org', relative_image_url)
 
-    text_html = soup.find('div', id='content').find_all('span', class_='black')
+    comment_html = soup.find('div', id='content').find_all('span', class_='black')
 
     comments = []
-    for comment in text_html:
+    for comment in comment_html:
         comments.append(comment.text)
 
     book_info = {
@@ -81,51 +79,6 @@ def download_txt(url, folder):
     except requests.exceptions.HTTPError:
         print(f'По ссылке {url} нет книги для скачивания.')
 
-    
-def get_book_author_and_name(number_of_book):
-    url_template = 'https://tululu.org/b'
-    url = f'{url_template}{number_of_book}/'
-
-    response = requests.get(url)
-    response.raise_for_status()
-
-    try:
-        check_for_redirect(response)
-    except requests.exceptions.HTTPError:
-        return None, []
-
-    soup = BeautifulSoup(response.text, 'lxml')
-    book_name_and_author = soup.find('h1').text.split('::')
-    name, author = book_name_and_author
-    normal_name = sanitize_filename(name.strip())
-    normal_author = sanitize_filename(author.strip())
-
-    genres_html = soup.find('span', class_='d_book').find_all('a')
-    all_genres = []
-    for genre in genres_html:
-        all_genres.append(genre.text)
-
-    return normal_author, all_genres
-
-
-def get_image_url(number_of_book):
-    url_template = 'https://tululu.org/b'
-    url = f'{url_template}{number_of_book}/'
-
-    response = requests.get(url)
-    response.raise_for_status()
-
-    try:
-        check_for_redirect(response)
-
-        soup = BeautifulSoup(response.text, 'lxml')
-        relative_image_url = soup.find('div', class_='bookimage').find('img')['src']
-        image_url = urljoin('https://tululu.org', relative_image_url)
-
-        return image_url
-    except requests.exceptions.HTTPError:
-        return None
-
 
 def download_image(url, folder):
     os.makedirs(folder, exist_ok=True)
@@ -149,28 +102,6 @@ def download_image(url, folder):
         print(f'По ссылке {url} нет книги для скачивания.')
 
 
-def get_book_comments(number_of_book):
-    url_template = 'https://tululu.org/b'
-    url = f'{url_template}{number_of_book}/'
-
-    response = requests.get(url)
-    response.raise_for_status()
-
-    try:
-        check_for_redirect(response)
-    except requests.exceptions.HTTPError:
-        return None
-
-    soup = BeautifulSoup(response.text, 'lxml')
-    text_html = soup.find('div', id='content').find_all('span', class_='black')
-
-    all_comments = []
-    for comment in text_html:
-        all_comments.append(comment.text)
-
-    return all_comments
-
-
 if __name__ == '__main__':
     for number_of_book in range(1, 11):
         url_template = 'https://tululu.org/b'
@@ -181,9 +112,7 @@ if __name__ == '__main__':
 
         try:
             check_for_redirect(response)
-            dictionary = parse_book_page(response.content)
+            soup = BeautifulSoup(response.text, 'lxml')
+            dictionary = parse_book_page(soup)
         except requests.exceptions.HTTPError:
             print(f'По ссылке {url} нет книги для скачивания.')
-
-
-
