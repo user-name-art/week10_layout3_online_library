@@ -20,6 +20,39 @@ def check_for_redirect(response):
         raise requests.exceptions.HTTPError
 
 
+def parse_book_page(html):
+    soup = BeautifulSoup(response.text, 'lxml')
+
+    book_name_and_author = soup.find('h1').text.split('::')
+    name, author = book_name_and_author
+    normal_name = sanitize_filename(name.strip())
+    normal_author = sanitize_filename(author.strip())
+
+    genres_html = soup.find('span', class_='d_book').find_all('a')
+    genres = []
+    for genre in genres_html:
+        genres.append(genre.text)
+
+    relative_image_url = soup.find('div', class_='bookimage').find('img')['src']
+    image_url = urljoin('https://tululu.org', relative_image_url)
+
+    text_html = soup.find('div', id='content').find_all('span', class_='black')
+
+    comments = []
+    for comment in text_html:
+        comments.append(comment.text)
+
+    book_info = {
+        'name': normal_name,
+        'author': normal_author,
+        'genres': genres,
+        'image_url': image_url,
+        'comments': comments,
+    }
+
+    return book_info
+
+
 def download_txt(url, folder):
     """Функция для скачивания текстовых файлов.
     Args:
@@ -139,11 +172,18 @@ def get_book_comments(number_of_book):
 
 
 if __name__ == '__main__':
-    """    for number_of_book in range(1, 11):
-        url = f'{url_template}{number_of_book}'
-        print(download_txt(url, folder))"""
-    for number_of_book in range(1, 11): 
-        author, genres = get_book_author_and_name(number_of_book)
-        print(author)
-        [print(genre) for genre in genres]
-        print(' ')
+    for number_of_book in range(1, 11):
+        url_template = 'https://tululu.org/b'
+        url = f'{url_template}{number_of_book}/'
+        
+        response = requests.get(url)
+        response.raise_for_status()
+
+        try:
+            check_for_redirect(response)
+            dictionary = parse_book_page(response.content)
+        except requests.exceptions.HTTPError:
+            print(f'По ссылке {url} нет книги для скачивания.')
+
+
+
