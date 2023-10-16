@@ -6,10 +6,6 @@ from pathvalidate import sanitize_filename
 from urllib.parse import urljoin, urlsplit, unquote
 
 
-url_template = 'https://tululu.org/txt.php?id='
-folder = 'books'
-
-
 def save_file(book, path):
     with open(path, 'wb') as file:
         file.write(book)
@@ -51,10 +47,11 @@ def parse_book_page(soup):
     return book_info
 
 
-def download_txt(url, folder):
+def download_txt(url, filename, folder='books/'):
     """Функция для скачивания текстовых файлов.
     Args:
         url (str): Cсылка на текст, который хочется скачать.
+        filename (str): Имя файла, с которым сохранять.
         folder (str): Папка, куда сохранять.
     Returns:
         str: Путь до файла, куда сохранён текст.
@@ -68,8 +65,6 @@ def download_txt(url, folder):
     try:
         check_for_redirect(response)
 
-        filename, author = get_book_author_and_name(number_of_book)
-
         filename_with_extension = f'{filename}.txt'
         path = os.path.join(folder, filename_with_extension)
 
@@ -77,10 +72,10 @@ def download_txt(url, folder):
 
         return path
     except requests.exceptions.HTTPError:
-        print(f'По ссылке {url} нет книги для скачивания.')
+        print(f'Книга {filename} недоступна для скачивания.')
 
 
-def download_image(url, folder):
+def download_image(url, folder='images/'):
     os.makedirs(folder, exist_ok=True)
 
     response = requests.get(url)
@@ -113,6 +108,13 @@ if __name__ == '__main__':
         try:
             check_for_redirect(response)
             soup = BeautifulSoup(response.text, 'lxml')
-            dictionary = parse_book_page(soup)
+            book_info = parse_book_page(soup)
         except requests.exceptions.HTTPError:
             print(f'По ссылке {url} нет книги для скачивания.')
+
+        download_book_url = f'https://tululu.org/txt.php?id={number_of_book}/'
+        filename = book_info['name']
+        download_txt(download_book_url, filename)
+
+        image_url = book_info['image_url']
+        download_image(image_url)
