@@ -1,5 +1,7 @@
 import os
+import sys
 import requests
+import argparse
 
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
@@ -97,8 +99,14 @@ def download_image(url, folder='images/'):
         print(f'По ссылке {url} нет книги для скачивания.')
 
 
-if __name__ == '__main__':
-    for number_of_book in range(1, 11):
+def main():
+    parser = argparse.ArgumentParser(description='Скрипт скачивает книги с сайта tululu.org.')
+    parser.add_argument('start_id', nargs='?', default=1, type=int, help='id первой книги для скачивания.')
+    parser.add_argument('end_id', nargs='?', default=2, type=int, help='id последней книги для скачивания.')
+    first_book_id = parser.parse_args().start_id
+    last_book_id = parser.parse_args().end_id + 1
+
+    for number_of_book in range(first_book_id, last_book_id):
         url_template = 'https://tululu.org/b'
         url = f'{url_template}{number_of_book}/'
         
@@ -118,3 +126,7 @@ if __name__ == '__main__':
 
         image_url = book_info['image_url']
         download_image(image_url)
+
+
+if __name__ == '__main__':
+    main()
