@@ -58,7 +58,6 @@ def download_txt(url, filename, folder='books/'):
     Returns:
         str: Путь до файла, куда сохранён текст.
     """
-
     os.makedirs(folder, exist_ok=True)
 
     response = requests.get(url)
@@ -78,6 +77,13 @@ def download_txt(url, filename, folder='books/'):
 
 
 def download_image(url, folder='images/'):
+    """Функция для скачивания текстовых файлов.
+    Args:
+        url (str): Cсылка на картинку, который хочется скачать.
+        folder (str): Папка, куда сохранять.
+    Returns:
+        str: Путь до файла, куда сохранёна картинка.
+    """
     os.makedirs(folder, exist_ok=True)
 
     response = requests.get(url)
@@ -86,23 +92,23 @@ def download_image(url, folder='images/'):
     try:
         check_for_redirect(response)
 
-        path = urlsplit(url)
+        link = urlsplit(url)
 
-        filename = unquote(path.path).split('/')[-1]
+        filename = unquote(link.path).split('/')[-1]
 
         path = os.path.join(folder, filename)
 
         save_file(response.content, path)
 
-        return filename
+        return path
     except requests.exceptions.HTTPError:
-        print(f'По ссылке {url} нет книги для скачивания.')
+        print(f'По ссылке {url} нет картинки для скачивания.')
 
 
 def main():
     parser = argparse.ArgumentParser(description='Скрипт скачивает книги с сайта tululu.org.')
     parser.add_argument('start_id', nargs='?', default=1, type=int, help='id первой книги для скачивания.')
-    parser.add_argument('end_id', nargs='?', default=2, type=int, help='id последней книги для скачивания.')
+    parser.add_argument('end_id', nargs='?', default=1, type=int, help='id последней книги для скачивания.')
     first_book_id = parser.parse_args().start_id
     last_book_id = parser.parse_args().end_id + 1
 
@@ -118,14 +124,20 @@ def main():
             soup = BeautifulSoup(response.text, 'lxml')
             book_info = parse_book_page(soup)
         except requests.exceptions.HTTPError:
-            print(f'По ссылке {url} нет книги для скачивания.')
+            book_info = {}
+        
+        if book_info:
+            print(book_info['name'])
+            print(book_info['author'])
+            print('')
 
-        download_book_url = f'https://tululu.org/txt.php?id={number_of_book}/'
-        filename = book_info['name']
-        download_txt(download_book_url, filename)
+            download_book_url = f'https://tululu.org/txt.php?id={number_of_book}/'
+            filename = book_info['name']
+            path = download_txt(download_book_url, filename)
 
-        image_url = book_info['image_url']
-        download_image(image_url)
+            if path:
+                image_url = book_info['image_url']
+                download_image(image_url)
 
 
 if __name__ == '__main__':
