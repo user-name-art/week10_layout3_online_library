@@ -131,9 +131,9 @@ def main():
             print(book_info['author'])
             print('')
 
-            download_book_url = f'https://tululu.org/txt.php?id={book_number}/'
+            book_download_url = f'https://tululu.org/txt.php?id={book_number}/'
             filename = book_info['name']
-            path = download_txt(download_book_url, filename)
+            path = download_txt(book_download_url, filename)
 
             if path:
                 image_url = book_info['image_url']
