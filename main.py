@@ -49,7 +49,7 @@ def parse_book_page(soup):
     return book_info
 
 
-def download_txt(url, filename, folder='books/'):
+def download_txt(book_number, filename, folder='books/'):
     """Функция для скачивания текстовых файлов.
     Args:
         url (str): Cсылка на текст, который хочется скачать.
@@ -60,7 +60,10 @@ def download_txt(url, filename, folder='books/'):
     """
     os.makedirs(folder, exist_ok=True)
 
-    response = requests.get(url)
+    book_download_url = 'https://tululu.org/txt.php'
+    payload = {'id': book_number}
+
+    response = requests.get(book_download_url, params=payload)
     response.raise_for_status()
 
     try:
@@ -130,9 +133,8 @@ def main():
             print(book_info['author'])
             print('')
 
-            book_download_url = f'https://tululu.org/txt.php?id={book_number}/'
             filename = book_info['name']
-            path = download_txt(book_download_url, filename)
+            path = download_txt(book_number, filename)
 
             if path:
                 image_url = book_info['image_url']
