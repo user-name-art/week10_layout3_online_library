@@ -112,9 +112,9 @@ def main():
     first_book_id = parser.parse_args().start_id
     last_book_id = parser.parse_args().end_id + 1
 
-    for number_of_book in range(first_book_id, last_book_id):
+    for book_number in range(first_book_id, last_book_id):
         url_template = 'https://tululu.org/b'
-        url = f'{url_template}{number_of_book}/'
+        url = f'{url_template}{book_number}/'
         
         response = requests.get(url)
         response.raise_for_status()
@@ -131,7 +131,7 @@ def main():
             print(book_info['author'])
             print('')
 
-            download_book_url = f'https://tululu.org/txt.php?id={number_of_book}/'
+            download_book_url = f'https://tululu.org/txt.php?id={book_number}/'
             filename = book_info['name']
             path = download_txt(download_book_url, filename)
 
