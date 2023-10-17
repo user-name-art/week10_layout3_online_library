@@ -108,7 +108,7 @@ def download_image(url, folder='images/'):
 def main():
     parser = argparse.ArgumentParser(description='Скрипт скачивает книги с сайта tululu.org.')
     parser.add_argument('start_id', nargs='?', default=1, type=int, help='id первой книги для скачивания.')
-    parser.add_argument('end_id', nargs='?', default=1, type=int, help='id последней книги для скачивания.')
+    parser.add_argument('end_id', nargs='?', default=30, type=int, help='id последней книги для скачивания.')
     first_book_id = parser.parse_args().start_id
     last_book_id = parser.parse_args().end_id + 1
 
