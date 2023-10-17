@@ -8,6 +8,9 @@ from pathvalidate import sanitize_filename
 from urllib.parse import urljoin, urlsplit, unquote
 
 
+URL_TEMPLATE = 'https://tululu.org/b'
+
+
 def save_file(book, path):
     with open(path, 'wb') as file:
         file.write(book)
@@ -28,7 +31,8 @@ def parse_book_page(soup):
     genres = [genre.text for genre in genres_html]
 
     relative_image_url = soup.find('div', class_='bookimage').find('img')['src']
-    image_url = urljoin('https://tululu.org', relative_image_url)
+    
+    image_url = urljoin(URL_TEMPLATE, relative_image_url)
 
     comment_html = soup.find('div', id='content').find_all('span', class_='black')
 
@@ -109,8 +113,7 @@ def main():
     last_book_id = parser.parse_args().end_id + 1
 
     for book_number in range(first_book_id, last_book_id):
-        url_template = 'https://tululu.org/b'
-        url = f'{url_template}{book_number}/'
+        url = f'{URL_TEMPLATE}{book_number}/'
         
         response = requests.get(url)
         response.raise_for_status()
