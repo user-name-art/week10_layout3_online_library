@@ -25,18 +25,14 @@ def parse_book_page(soup):
     normal_author = sanitize_filename(author.strip())
 
     genres_html = soup.find('span', class_='d_book').find_all('a')
-    genres = []
-    for genre in genres_html:
-        genres.append(genre.text)
+    genres = [genre.text for genre in genres_html]
 
     relative_image_url = soup.find('div', class_='bookimage').find('img')['src']
     image_url = urljoin('https://tululu.org', relative_image_url)
 
     comment_html = soup.find('div', id='content').find_all('span', class_='black')
 
-    comments = []
-    for comment in comment_html:
-        comments.append(comment.text)
+    comments = [comment.text for comment in comment_html]
 
     book_info = {
         'name': normal_name,
