@@ -49,10 +49,10 @@ def parse_book_page(soup):
     return book_info
 
 
-def download_txt(book_number, filename, folder='books/'):
+def download_txt(content, filename, folder='books/'):
     """Функция для скачивания текстовых файлов.
     Args:
-        url (str): Cсылка на текст, который хочется скачать.
+        content (bytes): Cодержание ответа сервера в байтах.
         filename (str): Имя файла, с которым сохранять.
         folder (str): Папка, куда сохранять.
     Returns:
@@ -60,52 +60,34 @@ def download_txt(book_number, filename, folder='books/'):
     """
     os.makedirs(folder, exist_ok=True)
 
-    book_download_url = 'https://tululu.org/txt.php'
-    payload = {'id': book_number}
+    filename_with_extension = f'{filename}.txt'
+    path = os.path.join(folder, filename_with_extension)
 
-    response = requests.get(book_download_url, params=payload)
-    response.raise_for_status()
+    save_file(content, path)
 
-    try:
-        check_for_redirect(response)
-
-        filename_with_extension = f'{filename}.txt'
-        path = os.path.join(folder, filename_with_extension)
-
-        save_file(response.content, path)
-
-        return path
-    except requests.exceptions.HTTPError:
-        print(f'Книга {filename} недоступна для скачивания.')
+    return path
 
 
-def download_image(url, folder='images/'):
-    """Функция для скачивания текстовых файлов.
+def download_image(content, url, folder='images/'):
+    """Функция для скачивания картинок.
     Args:
-        url (str): Cсылка на картинку, который хочется скачать.
+        content (bytes): Cодержание ответа сервера в байтах.
+        url (str): Cсылка на картинку, которую хочется скачать.
         folder (str): Папка, куда сохранять.
     Returns:
         str: Путь до файла, куда сохранёна картинка.
     """
     os.makedirs(folder, exist_ok=True)
 
-    response = requests.get(url)
-    response.raise_for_status()
+    link = urlsplit(url)
 
-    try:
-        check_for_redirect(response)
+    filename = unquote(link.path).split('/')[-1]
 
-        link = urlsplit(url)
+    path = os.path.join(folder, filename)
 
-        filename = unquote(link.path).split('/')[-1]
+    save_file(content, path)
 
-        path = os.path.join(folder, filename)
-
-        save_file(response.content, path)
-
-        return path
-    except requests.exceptions.HTTPError:
-        print(f'По ссылке {url} нет картинки для скачивания.')
+    return path
 
 
 def main():
@@ -126,19 +108,35 @@ def main():
             soup = BeautifulSoup(response.text, 'lxml')
             book_info = parse_book_page(soup)
         except requests.exceptions.HTTPError:
-            book_info = {}
+            print(f'Страницы {url} нет на сайте.')
         
-        if book_info:
+        book_download_url = 'https://tululu.org/txt.php'
+        payload = {'id': book_number}
+
+        response = requests.get(book_download_url, params=payload)
+        response.raise_for_status()
+
+        try:
+            check_for_redirect(response)
+            filename = book_info['name']
+            path = download_txt(response.content, filename)
+
             print(book_info['name'])
             print(book_info['author'])
             print('')
+        except requests.exceptions.HTTPError:
+            print(f'Книга по ссылке {url} недоступна для скачивания.')
 
-            filename = book_info['name']
-            path = download_txt(book_number, filename)
+        image_url = book_info['image_url']
+        
+        response = requests.get(image_url)
+        response.raise_for_status()
 
-            if path:
-                image_url = book_info['image_url']
-                download_image(image_url)
+        try:
+            check_for_redirect(response)            
+            download_image(response.content, image_url)
+        except requests.exceptions.HTTPError:
+            print(f'По ссылке {image_url} нет картинки для скачивания.')
 
 
 if __name__ == '__main__':
