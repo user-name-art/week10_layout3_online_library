@@ -2,6 +2,7 @@ import os
 import sys
 import requests
 import argparse
+import time
 
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
@@ -38,7 +39,7 @@ def parse_book_page(soup):
 
     comments = [comment.text for comment in comment_html]
 
-    book_info = {
+    book = {
         'name': normal_name,
         'author': normal_author,
         'genres': genres,
@@ -46,7 +47,7 @@ def parse_book_page(soup):
         'comments': comments,
     }
 
-    return book_info
+    return book
 
 
 def download_txt(content, filename, folder='books/'):
@@ -98,46 +99,41 @@ def main():
     last_book_id = parser.parse_args().end_id + 1
 
     for book_number in range(first_book_id, last_book_id):
-        url = f'{URL_TEMPLATE}{book_number}/'
-        
-        response = requests.get(url)
-        response.raise_for_status()
+        while True:
+            try:
+                url = f'{URL_TEMPLATE}{book_number}/'
 
-        try:
-            check_for_redirect(response)
-            soup = BeautifulSoup(response.text, 'lxml')
-            book_info = parse_book_page(soup)
-        except requests.exceptions.HTTPError:
-            print(f'Страницы {url} нет на сайте.')
-        
-        book_download_url = 'https://tululu.org/txt.php'
-        payload = {'id': book_number}
+                response = requests.get(url)
+                response.raise_for_status()
+                check_for_redirect(response)
+                soup = BeautifulSoup(response.text, 'lxml')
+                book = parse_book_page(soup)
 
-        response = requests.get(book_download_url, params=payload)
-        response.raise_for_status()
+                filename = book['name']
+                book_download_url = 'https://tululu.org/txt.php'
+                payload = {'id': book_number}
+                response = requests.get(book_download_url, params=payload)
+                response.raise_for_status()
+                check_for_redirect(response)
+                download_txt(response.content, filename)
 
-        try:
-            check_for_redirect(response)
-            filename = book_info['name']
-            path = download_txt(response.content, filename)
+                image_url = book['image_url']
+                response = requests.get(image_url)
+                response.raise_for_status()         
+                download_image(response.content, image_url)
 
-            print(book_info['name'])
-            print(book_info['author'])
-            print('')
-        except requests.exceptions.HTTPError:
-            print(f'Книга по ссылке {url} недоступна для скачивания.')
+                print(book['name'])
+                print(book['author'])  
+                print('')
 
-        image_url = book_info['image_url']
-        
-        response = requests.get(image_url)
-        response.raise_for_status()
-
-        try:
-            check_for_redirect(response)            
-            download_image(response.content, image_url)
-        except requests.exceptions.HTTPError:
-            print(f'По ссылке {image_url} нет картинки для скачивания.')
+                break
+            except requests.exceptions.ConnectionError:
+                print('Нет подключения к сайту, ждем.\n')
+                time.sleep(2)
+            except requests.exceptions.HTTPError:
+                print(f'По ссылке {url} нет книги.\n')
+                break
 
 
 if __name__ == '__main__':
-    main()
+    main()    
