@@ -22,7 +22,7 @@ def check_for_redirect(response):
         raise requests.exceptions.HTTPError
 
 
-def parse_book_page(soup):
+def parse_book_page(soup, url):
     book_name_and_author = soup.find('h1').text.split('::')
     name, author = book_name_and_author
     normal_name = sanitize_filename(name.strip())
@@ -33,7 +33,7 @@ def parse_book_page(soup):
 
     relative_image_url = soup.find('div', class_='bookimage').find('img')['src']
     
-    image_url = urljoin(URL_TEMPLATE, relative_image_url)
+    image_url = urljoin(url, relative_image_url)
 
     comment_html = soup.find('div', id='content').find_all('span', class_='black')
 
@@ -107,7 +107,7 @@ def main():
                 response.raise_for_status()
                 check_for_redirect(response)
                 soup = BeautifulSoup(response.text, 'lxml')
-                book = parse_book_page(soup)
+                book = parse_book_page(soup, url)
 
                 filename = book['name']
                 book_download_url = 'https://tululu.org/txt.php'
